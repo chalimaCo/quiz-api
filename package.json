@@ -1,0 +1,17 @@
+{
+  "name": "quiz-app",
+  "version": "1.0.0",
+  "author": "Afrivelle",
+  "private": true,
+  "scripts": {
+    "start": "node app.js"
+  },
+  "dependencies": {
+    "body-parser": "*",
+    "cookie-parser": "*",
+    "express": "*",
+    "morgan": "*",
+    "pug": "*",
+    "serve-favicon": "*"
+  }
+}
