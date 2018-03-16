@@ -11,20 +11,20 @@ function signup(req,res,next){
     user = new User(fields);
     user.save(function postedUser(err,user){
         if(err){
-            let errorReport = {};
+            let errorDetails = {};
             if(err instanceof mongoose.Error.ValidationError){
                 for(errorName in err.errors){
-                    errorReport[errorName] = err.errors[errorName].message;
+                    errorDetails[errorName] = err.errors[errorName].message;
                 }
-                return res._sendError(`Invalid and/or missing parameters`,utils.ClientError(errorReport))
+                return res._sendError(`Invalid and/or missing parameters`,utils.ErrorReport(errorDetails))
             };
             if(err.code===11000){                           /*duplicate value for unique field*/
                 let violatedField = err.message.match(/index: (.*)_1/)[1];
-                errorReport[violatedField] = `${violatedField} already taken`;
-                return res._sendError(`${violatedField} already taken`,utils.ClientError(409, errorReport))
+                errorDetails[violatedField] = `${violatedField} already taken`;
+                return res._sendError(`${violatedField} already taken`,utils.ErrorReport(409, errorDetails))
             }
             return next(utils.ServerError(err))
         }
-        res._success()
+        res._success({authToken: utils.getAuthToken(user)})
     })
 }
