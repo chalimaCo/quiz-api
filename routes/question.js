@@ -6,7 +6,11 @@ router
     .post("/", postQuestions)
 
 function getQuestions(req, res, next){
-
+    var [limit, from] = [req.query.limit || 20, req.query.from || 0];
+    Question.find({}, {limit: 10, skip: from}, function sendQuestions(err, questions){
+        if(err) return res._sendError("No matching documents", utils.ErrorReport(404, {questions: "no questions found found"}));
+        return res._success(questions)
+    })
 }
 function postQuestions(req,res,next){
     let postQuestions = [],
@@ -30,26 +34,48 @@ function postQuestions(req,res,next){
         return async.reflect(function saveUser(err, next){
             question.save(next)
         })
-    }), reportOutcomes)
-
-    function reportOutcomes(_err, results){
-        let aggregatedErrorDetails = {}
-        for(result of results){
-            if(result.error){
+    }), reporter(next))
+}
+function reporter(next){
+    return function reportOutcomes(_err, results){
+        results.map(function makeReport(result){
+            let err;
+            if(err = result.error){
                 let errorDetails = {};
                 if(err instanceof mongoose.Error.ValidationError){
                     for(errorName in err.errors){
                         errorDetails[errorName] = err.errors[errorName].message;
                     }
-                    res._sendError(`Invalid and/or missing parameters`,utils.ErrorReport(errorDetails))
+                    return {
+                        status: "failed",
+                        reason: `Invalid and/or missing parameters`,
+                        errors: utils.ErrorReport(errorDetails)
+                    }
                 };
                 if(err.code===11000){                           /*duplicate value for unique field*/
                     let violatedField = err.message.match(/index: (.*)_1/)[1];
-                    errorDetails[violatedField] = `${violatedField} already taken`;
-                    return res._sendError(`${violatedField} already taken`,utils.ErrorReport(409, errorDetails))
+                    errorDetails[violatedField] = `${violatedField} already exists`;
+                    return {
+                        status: "failed",
+                        reason: `${violatedField} already taken`,
+                        errors: utils.ErrorReport(409, errorDetails)
+                    }
                 }
-                return next(utils.ServerError(err))
+                next(utils.ServerError(err,{report: false}))
+                return {
+                    status: "failed",
+                    reason: `internal server error`,
+                    errors: utils.ErrorReport(500, {server: "internal server error"})
+                }
+            }else{
+                return {
+                    status: "success",
+                    result: {
+                        statusCode: 200,
+                        _id: result.value._id
+                    }
+                }
             }
-        }
+        })
     }
 }
