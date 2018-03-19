@@ -48,7 +48,7 @@ function reporter(next){
                     }
                     return {
                         status: "failed",
-                        reason: `Invalid and/or missing parameters`,
+                        reason: `invalid and/or missing parameters`,
                         errors: utils.ErrorReport(errorDetails)
                     }
                 };
