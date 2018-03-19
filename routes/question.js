@@ -1,6 +1,11 @@
 const
     async = require("async"),
-    router = require("express").Router();
+    router = require("express").Router(),
+    appUtils = require("../lib/utils"),
+    User = require("../lib/db/db").Question
+;
+
+module.exports = router;
 router
     .get("/", getQuestions)
     .post("/", postQuestions)
@@ -8,7 +13,10 @@ router
 function getQuestions(req, res, next){
     var [limit, from] = [req.query.limit || 20, req.query.from || 0];
     Question.find({}, {limit: 10, skip: from}, function sendQuestions(err, questions){
-        if(err) return res._sendError("No matching documents", utils.ErrorReport(404, {questions: "no questions found found"}));
+        if(err) return next(appUtils.ServerError(err));
+        if(questions.length === 0)  return res._sendError("No matching documents", appUtils.ErrorReport(404, {
+            questions: "no questions found found"
+        }));
         return res._success(questions)
     })
 }
@@ -49,7 +57,7 @@ function reporter(next){
                     return {
                         status: "failed",
                         reason: `invalid and/or missing parameters`,
-                        errors: utils.ErrorReport(errorDetails)
+                        errors: appUtils.ErrorReport(errorDetails)
                     }
                 };
                 if(err.code===11000){                           /*duplicate value for unique field*/
@@ -58,14 +66,14 @@ function reporter(next){
                     return {
                         status: "failed",
                         reason: `${violatedField} already taken`,
-                        errors: utils.ErrorReport(409, errorDetails)
+                        errors: appUtils.ErrorReport(409, errorDetails)
                     }
                 }
-                next(utils.ServerError(err,{report: false}))
+                next(appUtils.ServerError(500, "none", err))
                 return {
                     status: "failed",
                     reason: `internal server error`,
-                    errors: utils.ErrorReport(500, {server: "internal server error"})
+                    errors: appUtils.ErrorReport(500, {server: "internal server error"})
                 }
             }else{
                 return {

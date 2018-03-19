@@ -1,43 +1,38 @@
-express = require('express');
-path = require('path');
-logger = require('morgan');
-cookieParser = require('cookie-parser');
-bodyParser = require('body-parser');
-index = require('./routes/index');
+const
+  util = require("util"),
+  http = require("http"),
+  express = require('express'),
+  path = require('path'),
+  logger = require('morgan'),
+  cookieParser = require('cookie-parser'),
+  bodyParser = require('body-parser'),
+  authStrategies = require("./lib/auth/strategies"),
+  appUtils = require("./lib/utils"),
+  login = require("./routes/login"),
+  signup = require("./routes/signup"),
+  questions = require("./routes/questions"),
+  passport = require("passport"),
+  app = express()
+;
 
-var app = express();
+passport
+  .use("jwt", authStrategies.bearerStrategy)
+  .use("local", authStrategies.localStrategy)
+;
 
-// view engine setup
-app.set('views', path.join(__dirname, 'views'));
-app.set('view engine', 'pug');
+app
+  .set('views', path.join(__dirname, 'views'))
+  .set('view engine', 'pug')
+  .use(logger('dev'))
+  .use(bodyParser.json())
+  .use(cookieParser())
+  .use(express.static(path.join(__dirname, 'public')))
+  .use("/login", login)
+  .use("/signup", signup)
+  .use("/questions", questions)
+  .use(appUtils.serverErrorHandler)
+;
 
-// uncomment after placing your favicon in /public
-//app.use(favicon(path.join(__dirname, 'public', 'favicon.ico')));
-app.use(logger('dev'));
-app.use(bodyParser.json());
-app.use(bodyParser.urlencoded({ extended: false }));
-app.use(cookieParser());
-app.use(express.static(path.join(__dirname, 'public')));
-
-app.use('/', index);
-app.use('/users', users);
-
-// catch 404 and forward to error handler
-app.use(function(req, res, next) {
-  var err = new Error('Not Found');
-  err.status = 404;
-  next(err);
-});
-
-// error handler
-app.use(function(err, req, res, next) {
-  // set locals, only providing error in development
-  res.locals.message = err.message;
-  res.locals.error = req.app.get('env') === 'development' ? err : {};
-
-  // render the error page
-  res.status(err.status || 500);
-  res.render('error');
-});
-
-module.exports = app;
+const server = http.createServer(app);
+appUtils.extend(server);
+server.listen(80, "127.0.0.1", function(){console.log(`server running on ${util.inspect(server.address(),{color: true, depth: null})}`)})
