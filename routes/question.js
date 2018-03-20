@@ -14,7 +14,7 @@ function getQuestions(req, res, next){
     var [limit, from] = [req.query.limit || 20, req.query.from || 0];
     Question.find({}, {limit: 10, skip: from}, function sendQuestions(err, questions){
         if(err) return next(appUtils.ServerError(err));
-        if(questions.length === 0)  return res._sendError("No matching documents", appUtils.ErrorReport(404, {
+        if(questions.length == null)  return res._sendError("No matching documents", appUtils.ErrorReport(404, {
             questions: "no questions found found"
         }));
         return res._success(questions)
