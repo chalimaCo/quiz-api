@@ -23,7 +23,7 @@ function testQuestions(t){
         console.log(util.inspect({body},{depth: null, color: true}))
         if(err) return  console.log("request failed. error: ", err)
         if(Math.floor(response.statusCode/100) === 5) return console.log("Request failed due to internal server error. Response: ", body);
-        let [emptyQuestionRes, incompleteQuestionRes, emptyArgsQuestionRes, partialArgsQuestionRes, completeQuestionRes] = JSON.parse(body).results;
+        let [emptyQuestionRes, incompleteQuestionRes, emptyArgsQuestionRes, partialArgsQuestionRes, completeQuestionRes] = body.result.results;
         t.deepEqual(emptyQuestionRes, {
             status: "failed",
             reason: `invalid and/or missing parameters`,

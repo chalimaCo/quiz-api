@@ -12,9 +12,9 @@ router
     .post("/", postQuestions)
 
 function getQuestions(req, res, next){
-    var [limit, from] = [req.query.limit || 20, req.query.from || 0];
-    Question.find({}, {limit: 10, skip: from}, function sendQuestions(err, questions){
-        if(err) return appUtils.ServerError(err)
+    var [limit, from] = [Number(req.query.limit) || 20, Number(req.query.from) || 0];
+    Question.find({}, "content answer options", {limit: 2}, function sendQuestions(err, questions){
+        if(err) return next(appUtils.ServerError(err));
         if(!questions) return res._sendError("No matching documents", appUtils.ErrorReport(404, {questions: "no questions found found"}));
         return res._success(questions)
     })
@@ -43,7 +43,7 @@ function postQuestions(req,res,next){
         })
     }), reporter(res, next))
 }
-function reporter(res, next){console.log("reporter in action")
+function reporter(res, next){
     return function reportOutcomes(_err, results){
         results = results.map(function makeReport(result){
             let err;
@@ -53,7 +53,6 @@ function reporter(res, next){console.log("reporter in action")
                     for(errorName in err.errors){
                         errorDetails[errorName] = err.errors[errorName].message;
                     }
-                    console.log({errorDetails})
                     return {
                         status: "failed",
                         reason: `invalid and/or missing parameters`,
@@ -85,6 +84,6 @@ function reporter(res, next){console.log("reporter in action")
                 }
             }
         });
-        return res._success({statusCode:207, result: results})
+        return res._success({statusCode:207, results})
     }
 }
